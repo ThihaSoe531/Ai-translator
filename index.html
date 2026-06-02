@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Translator</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* Light Mode CSS */
+        body.light-mode { background-color: #f0f2f5; color: #333; }
+        body.light-mode .header-title .trans-text { color: #1a1a1a; }
+        body.light-mode .header-title .version-text { color: #666666; }
+        body.light-mode .header-title .subtitle { color: #555555; }
+        body.light-mode .box { background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        body.light-mode .flex-group input, body.light-mode .flex-group select { background-color: #ffffff; color: #333; border: 1px solid #ccc; }
+        body.light-mode textarea { background-color: #ffffff; color: #333; border: 1px solid #ccc; }
+        body.light-mode .fav-btn { background-color: #e9ecef; color: #333; }
+        body.light-mode .fav-btn:hover { background-color: #d3d9df; }
+        body.light-mode #historyList li { border-bottom: 1px solid #eaeaea; }
+        body.light-mode .my-text { color: #444; }
+        body.light-mode .en-text { color: #777; }
+        body.light-mode summary { color: #555; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; max-width: 550px; margin: 0 auto; background-color: #121212; color: #e0e0e0; position: relative; }
+        
+        .header-title { text-align: center; margin: 15px 0 25px 0; user-select: none; }
+        .header-title h1 { margin: 0; font-size: 42px; font-weight: 900; font-family: 'Arial Black', Impact, sans-serif; display: flex; align-items: baseline; justify-content: center; }
+        .header-title .ai-text { color: #ffa500; margin-right: 10px; }
+        .header-title .trans-text { color: #ffffff; }
+        .header-title .version-text { font-size: 10px; color: #cccccc; margin-left: 8px; font-weight: normal; font-family: Arial, sans-serif; letter-spacing: 1px; }
+        .header-title .subtitle { margin: 5px 0 0 0; font-size: 11px; color: #aaaaaa; letter-spacing: 8px; font-weight: bold; text-transform: uppercase; }
+        
+        .box { background: #1e1e1e; padding: 12px 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: none; }
+        
+        .flex-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .flex-group label { white-space: nowrap; font-size: 14px; font-weight: bold; width: 85px; }
+        .flex-group input, .flex-group select { flex: 1; padding: 8px 10px; border: none; border-radius: 5px; font-size: 14px; box-sizing: border-box; background-color: #2d2d2d; color: #e0e0e0; outline: none; }
+        .flex-group input::placeholder { color: #888; }
+        
+        .save-btn { width: 100%; padding: 10px; font-size: 14px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; transition: 0.2s; margin-top: 5px; font-weight: bold; }
+        .save-btn:hover { background-color: #218838; }
+
+        .add-fav-btn { background-color: #ffc107; color: #333; border: none; border-radius: 5px; padding: 8px 10px; font-size: 13px; cursor: pointer; font-weight: bold; white-space: nowrap; }
+
+        /* ကိုယ်တိုင်မှတ်ထားသော Favorites ဒီဇိုင်း */
+        .fav-langs { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .fav-langs span { font-size: 13px; color: #aaa; font-weight: bold; }
+        .fav-btn { padding: 5px 10px; font-size: 13px; background-color: #333; border: none; border-radius: 15px; cursor: pointer; color: #e0e0e0; display: flex; align-items: center; gap: 5px; }
+        .fav-btn:hover { background-color: #444; }
+        .fav-del { color: #dc3545; font-weight: bold; font-size: 12px; cursor: pointer; padding: 0 3px; }
+
+        .btn-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
+        .action-row { display: flex; justify-content: center; gap: 15px; }
+        button.action-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* လေးထောင့်ခလုတ်များ ဒီဇိုင်း (Mic, Camera, Gallery) */
+        .square-btn { width: 85px; height: 85px; border-radius: 20px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 35px; color: white; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .square-btn:hover { transform: scale(1.05); }
+        
+        #micBtn { background-color: #dc3545; }
+        #micBtn.recording { animation: pulse 1s infinite; background-color: #bd2130; border: 3px solid rgba(255,255,255,0.5); }
+        #cameraBtn { background-color: #20c997; }
+        #galleryBtn { background-color: #6f42c1; }
+        
+        #translateBtn { background-color: #ff9800; }
+        #imagePreview { max-width: 100%; max-height: 250px; border-radius: 8px; margin-bottom: 10px; display: none; object-fit: cover; }
+        
+        textarea { width: 100%; min-height: 60px; padding: 10px; border: none; border-radius: 8px; font-size: 15px; margin-top: 8px; box-sizing: border-box; resize: none; line-height: 1.5; overflow: hidden; background-color: #2d2d2d; color: #e0e0e0; outline: none; }
+        textarea::placeholder { color: #888; }
+        
+        .header-flex { display: flex; justify-content: space-between; align-items: center; }
+        .tts-btn { background-color: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: bold; }
+        .tts-btn:hover { background-color: #138496; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        
+        #historyList { list-style-type: none; padding: 0; margin: 10px 0 0 0; }
+        #historyList li { padding: 10px 0; border-bottom: 1px solid #333; font-size: 13px; line-height: 1.6; }
+        #historyList li:last-child { border-bottom: none; }
+        .my-text { font-weight: bold; color: #e0e0e0; display: block; }
+        .en-text { color: #aaa; margin-top: 4px; display: block; }
+    </style>
+</head>
+<body>
+    <button id="themeToggle" onclick="toggleTheme()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 25px; cursor: pointer; user-select: none; z-index: 1000;" title="Theme ပြောင်းရန်">☀️</button>
+
+    <div class="header-title">
+        <h1><span class="ai-text">AI</span><span class="trans-text">TRANSLATOR</span><span class="version-text">VERSION 1.0</span></h1>
+        <p class="subtitle">Creation By Thihasoe</p>
+    </div>
+
+    <details class="box" style="cursor: pointer; user-select: none;">
+        <summary style="font-weight: bold; color: #ccc; padding-bottom: 2px;">⚙️ API Keys (နှိပ်၍ ဖွင့်/ပိတ်ပါ)</summary>
+        <div style="margin-top: 12px; cursor: default;">
+            <div class="flex-group">
+                <label>🔑 Gemini:</label>
+                <input type="password" id="apiKeyInput" placeholder="Gemini API Key ထည့်ပါ...">
+            </div>
+            <div class="flex-group" style="margin-bottom: 0;">
+                <label>🔑 TTS:</label>
+                <input type="password" id="ttsApiKeyInput" placeholder="Google TTS API Key ထည့်ပါ...">
+            </div>
+            <button onclick="saveApiKeys()" class="save-btn">💾 Keys များကို မှတ်ထားမည်</button>
+        </div>
+    </details>
+
+    <div class="box">
+        <div class="flex-group" style="margin-bottom: 0;">
+            <label>🌐 ဘာသာစကား:</label>
+            <select id="languageSelect" onchange="saveLanguage()">
+                <option value="Myanmar">မြန်မာ</option>
+                <option value="English" selected>English (အင်္ဂလိပ်)</option>
+                <option value="Thai">Thai (ထိုင်း)</option>
+                <option value="Chinese">Chinese (တရုတ်)</option>
+                <option value="Japanese">Japanese (ဂျပန်)</option>
+                <option value="Korean">Korean (ကိုရီးယား)</option>
+                <option value="Hindi">Hindi (ဟိန္ဒီ)</option>
+                <option value="Spanish">Spanish (စပိန်)</option>
+                <option value="French">French (ပြင်သစ်)</option>
+                <option value="German">German (ဂျာမန်)</option>
+                <option value="Russian">Russian (ရုရှား)</option>
+                <option value="Arabic">Arabic (အာရဗီ)</option>
+                <option value="Malay">Malay (မလေးရှား)</option>
+                <option value="Indonesian">Indonesian (အင်ဒိုနီးရှား)</option>
+                <option value="Vietnamese">Vietnamese (ဗီယက်နမ်)</option>
+                <option value="Italian">Italian (အီတလီ)</option>
+                <option value="Portuguese">Portuguese (ပေါ်တူဂီ)</option>
+                <option value="Dutch">Dutch (ဒတ်ချ်)</option>
+                <option value="Turkish">Turkish (တူရကီ)</option>
+            </select>
+            <button class="add-fav-btn" onclick="addFavorite()">⭐ ထည့်မည်</button>
+        </div>
+        
+        <div class="fav-langs" id="favContainer">
+            </div>
+    </div>
+
+    <div class="btn-group">
+        <div class="action-row">
+            <button id="micBtn" class="square-btn" title="အသံဖမ်းမည်">🔴</button>
+            <button id="cameraBtn" class="square-btn" title="ဓာတ်ပုံရိုက်မည်" onclick="document.getElementById('cameraInput').click()">📷</button>
+            <button id="galleryBtn" class="square-btn" title="ပုံရွေးမည်" onclick="document.getElementById('galleryInput').click()">🖼️</button>
+        </div>
+        <button id="translateBtn" class="action-btn">🔄 စာရိုက်ပြီး ဘာသာပြန်ရန်</button>
+        
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+        <input type="file" id="galleryInput" accept="image/*" style="display: none;">
+    </div>
+
+    <div class="box">
+        <label><b>မူရင်းစာသား / ဓာတ်ပုံ</b></label>
+        <img id="imagePreview" src="" alt="Selected Image">
+        <textarea id="myanmarText" placeholder="ပြောလိုက်သော (သို့) ရိုက်ထည့်မည့် စာများကို ဤနေရာတွင် ထည့်ပါ... (ပုံနှင့်ပတ်သက်၍ မေးလိုပါက စာအရင်ရိုက်ပါ)" oninput="autoResize(this)"></textarea>
+    </div>
+
+    <div class="box">
+        <div class="header-flex">
+            <label><b id="outputLabel">Translation Result:</b></label>
+            <button id="ttsBtn" class="tts-btn">🔊 နားထောင်မည်</button>
+        </div>
+        <textarea id="englishText" data-speak="" placeholder="ဘာသာပြန်ထားသော စာများ ဤနေရာတွင် ပေါ်လာပါမည်..." readonly></textarea>
+        <div id="tokenUsage" style="font-size: 12px; color: #198754; text-align: right; margin-top: 8px; font-weight: bold;"></div>
+    </div>
+
+    <div class="box" id="historyBox" style="display: none;">
+        <label><b>📜 မှတ်တမ်း (History):</b></label>
+        <ul id="historyList"></ul>
+    </div>
+
+    <script>
+        // Theme Toggle Function
+        function toggleTheme() {
+            const body = document.body;
+            body.classList.toggle('light-mode');
+            const isLight = body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            document.getElementById('themeToggle').innerText = isLight ? '🌙' : '☀️';
+        }
+
+        // Check saved theme on load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('theme') === 'light') {
+                document.body.classList.add('light-mode');
+                document.getElementById('themeToggle').innerText = '🌙';
+            }
+        });
+        const micBtn = document.getElementById('micBtn');
+        const translateBtn = document.getElementById('translateBtn');
+        const ttsBtn = document.getElementById('ttsBtn');
+        const myanmarText = document.getElementById('myanmarText');
+        const englishText = document.getElementById('englishText');
+        const historyBox = document.getElementById('historyBox');
+        const historyList = document.getElementById('historyList');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const ttsApiKeyInput = document.getElementById('ttsApiKeyInput');
+        const languageSelect = document.getElementById('languageSelect');
+        const outputLabel = document.getElementById('outputLabel');
+        const favContainer = document.getElementById('favContainer');
+        const tokenUsage = document.getElementById('tokenUsage');
+        const cameraInput = document.getElementById('cameraInput');
+        const galleryInput = document.getElementById('galleryInput');
+        const imagePreview = document.getElementById('imagePreview');
+
+        let cachedAudio = null;
+        let lastSpokenText = "";
+        
+        // Favorites များကို လှမ်းယူခြင်း
+        let favorites = JSON.parse(localStorage.getItem('my_fav_langs')) || [];
+
+        function autoResize(element) {
+            element.style.height = 'auto';
+            element.style.height = (element.scrollHeight) + 'px';
+        }
+
+        window.onload = function() {
+            const savedGeminiKey = localStorage.getItem('gemini_api_key');
+            if (savedGeminiKey) apiKeyInput.value = savedGeminiKey;
+
+            const savedTtsKey = localStorage.getItem('tts_api_key');
+            if (savedTtsKey) ttsApiKeyInput.value = savedTtsKey;
+            
+            const savedLang = localStorage.getItem('saved_language');
+            if (savedLang) {
+                languageSelect.value = savedLang;
+                outputLabel.innerText = savedLang + ' Translation:';
+            }
+            
+            renderFavorites(); // Favorites ခလုတ်များ ဖော်ပြခြင်း
+            window.speechSynthesis.getVoices();
+        };
+
+        window.speechSynthesis.onvoiceschanged = function() {
+            window.speechSynthesis.getVoices();
+        };
+
+        function saveApiKeys() {
+            const geminiKey = apiKeyInput.value.trim();
+            const ttsKey = ttsApiKeyInput.value.trim();
+            let message = "";
+            if (geminiKey !== '') { localStorage.setItem('gemini_api_key', geminiKey); message += "✅ Gemini API Key သိမ်းဆည်းပြီးပါပြီ။\n"; }
+            if (ttsKey !== '') { localStorage.setItem('tts_api_key', ttsKey); message += "✅ TTS API Key သိမ်းဆည်းပြီးပါပြီ။"; }
+            if (message !== "") { alert(message); } else { alert('⚠️ API Key အနည်းဆုံးတစ်ခု ထည့်သွင်းရန် လိုအပ်ပါသည်။'); }
+        }
+
+        // ဘာသာစကား မှတ်သားခြင်း
+        function saveLanguage() {
+            localStorage.setItem('saved_language', languageSelect.value);
+            outputLabel.innerText = languageSelect.value + ' Translation:';
+        }
+
+        // --- Favorites စနစ် စတင်ခြင်း ---
+        function renderFavorites() {
+            favContainer.innerHTML = '<span>⭐ အမြန်ရွေးရန်:</span>';
+            if (favorites.length === 0) {
+                favContainer.innerHTML += '<span style="color:#aaa; font-weight:normal; font-size:12px;">(အပေါ်က ⭐ ထည့်မည် ကိုနှိပ်ပါ)</span>';
+            }
+            favorites.forEach(lang => {
+                const btn = document.createElement('button');
+                btn.className = 'fav-btn';
+                btn.onclick = () => { languageSelect.value = lang; saveLanguage(); };
+                
+                const spanText = document.createElement('span');
+                spanText.innerText = lang;
+                
+                const delIcon = document.createElement('span');
+                delIcon.innerText = "✖";
+                delIcon.className = "fav-del";
+                delIcon.title = "ဖျက်မည်";
+                delIcon.onclick = (e) => { removeFavorite(e, lang); };
+                
+                btn.appendChild(spanText);
+                btn.appendChild(delIcon);
+                favContainer.appendChild(btn);
+            });
+        }
+
+        function addFavorite() {
+            const lang = languageSelect.value.trim();
+            if (lang && !favorites.includes(lang)) {
+                favorites.push(lang);
+                localStorage.setItem('my_fav_langs', JSON.stringify(favorites));
+                renderFavorites();
+            }
+        }
+
+        function removeFavorite(event, lang) {
+            event.stopPropagation(); // နှိပ်လိုက်သောအခါ ဘာသာစကားမပြောင်းသွားစေရန်
+            favorites = favorites.filter(l => l !== lang);
+            localStorage.setItem('my_fav_langs', JSON.stringify(favorites));
+            renderFavorites();
+        }
+        // --- Favorites စနစ် ပြီးဆုံးခြင်း ---
+
+        async function translateWithGemini(text) {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) { alert('ကျေးဇူးပြု၍ အပေါ်တွင် Gemini API Key ထည့်သွင်းပါ။'); return; }
+
+            const targetLang = languageSelect.value;
+            outputLabel.innerText = targetLang + ' Translation:';
+            englishText.value = "⏳ ဘာသာပြန်နေပါသည်...";
+            englishText.dataset.speak = ""; 
+            autoResize(englishText);
+
+            let promptInstruction = `You are a professional translator. Provide the ${targetLang} translation for: "${text}"
+            Output exactly in this format with no markdown:
+            DISPLAY: [Direct Translation]
+            SPEAK: [Translation]`;
+
+            if (targetLang === "Myanmar") {
+                promptInstruction = `Translate to Myanmar: "${text}"
+                Output exactly in this format with no markdown:
+                DISPLAY: [Myanmar translation. Keep English words in English alphabet if they are brands or tech terms.]
+                SPEAK: [Myanmar translation. But transliterate any English words entirely into Myanmar phonetic script so a local Text-to-Speech can read it fluently.]`;
+            }
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: promptInstruction }] }] })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    englishText.value = "❌ Error: " + data.error.message;
+                } else {
+                    const resultText = data.candidates[0].content.parts[0].text;
+                    let displayText = resultText;
+                    let speakText = resultText;
+
+                    if (resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
+                        const parts = resultText.split("SPEAK:");
+                        displayText = parts[0].replace("DISPLAY:", "").trim();
+                        speakText = parts[1].trim();
+                    }
+
+                    englishText.value = displayText;
+                    englishText.dataset.speak = speakText;
+                    
+                    autoResize(englishText);
+                    saveToHistory(text, displayText);
+                    
+                    if (data.usageMetadata) {
+                        tokenUsage.innerText = `🪙 ကုန်ကျ Tokens: ${data.usageMetadata.totalTokenCount} (ဈေးနှုန်း: $1 = Token ၃ သန်းခန့်)`;
+                    }
+                    
+                    cachedAudio = null; 
+                    lastSpokenText = "";
+                }
+            } catch (error) {
+                englishText.value = "❌ ချိတ်ဆက်မှု အမှားအယွင်း ဖြစ်ပေါ်နေပါသည်။";
+            }
+        }
+
+        translateBtn.addEventListener('click', () => {
+            if (myanmarText.value.trim() !== '') translateWithGemini(myanmarText.value.trim());
+        });
+
+        ttsBtn.addEventListener('click', async () => {
+            let textToSpeak = englishText.dataset.speak || englishText.value.trim();
+            if (textToSpeak === '' || textToSpeak.includes('⏳') || textToSpeak.includes('❌')) return;
+
+            if (cachedAudio && lastSpokenText === textToSpeak) {
+                cachedAudio.play();
+                return;
+            }
+
+            const targetLang = languageSelect.value;
+            const langCodeMap = { 
+                "Myanmar": "my-MM", "English": "en-US", "Thai": "th-TH", 
+                "Chinese": "zh-CN", "Japanese": "ja-JP", "Korean": "ko-KR",
+                "Hindi": "hi-IN", "Spanish": "es-ES", "French": "fr-FR",
+                "German": "de-DE", "Russian": "ru-RU", "Arabic": "ar-SA",
+                "Malay": "ms-MY", "Indonesian": "id-ID", "Vietnamese": "vi-VN",
+                "Italian": "it-IT", "Portuguese": "pt-PT", "Dutch": "nl-NL", "Turkish": "tr-TR"
+            };
+            const langCode = langCodeMap[targetLang] || "en-US";
+
+            const voices = window.speechSynthesis.getVoices();
+            const matchingVoice = voices.find(voice => voice.lang.includes(langCode.split('-')[0]));
+
+            if (matchingVoice && targetLang !== "Myanmar") {
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = langCode;
+                utterance.voice = matchingVoice;
+                window.speechSynthesis.speak(utterance);
+                return;
+            }
+
+            const ttsApiKey = localStorage.getItem('tts_api_key');
+            if (!ttsApiKey) { alert('Google TTS API Key လိုအပ်ပါသည်။'); return; }
+            
+            const googleLangMap = { "Chinese": "cmn-CN", "Arabic": "ar-XA" };
+            const gLang = googleLangMap[targetLang] || langCode;
+
+            ttsBtn.innerText = "⏳ ဖတ်နေသည်...";
+
+            try {
+                const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${ttsApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        input: { text: textToSpeak },
+                        voice: { languageCode: gLang },
+                        audioConfig: { audioEncoding: "MP3" }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert("❌ TTS Error: " + data.error.message);
+                    ttsBtn.innerText = "🔊 နားထောင်မည်";
+                } else {
+                    cachedAudio = new Audio("data:audio/mp3;base64," + data.audioContent);
+                    lastSpokenText = textToSpeak;
+                    
+                    cachedAudio.play();
+                    cachedAudio.onended = () => { ttsBtn.innerText = "🔊 နားထောင်မည်"; };
+                }
+            } catch (error) {
+                alert("❌ အသံဖိုင်ရယူရာတွင် အမှားအယွင်း ဖြစ်ပေါ်နေပါသည်။");
+                ttsBtn.innerText = "🔊 နားထောင်မည်";
+            }
+        });
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        micBtn.addEventListener('click', async () => {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = e => {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstart = () => {
+                        isRecording = true;
+                        micBtn.classList.add("recording");
+                        micBtn.innerHTML = "⏹️";
+                        myanmarText.value = "🎙️ အသံဖမ်းယူနေပါသည်...";
+                        englishText.value = "";
+                        englishText.dataset.speak = "";
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        isRecording = false;
+                        micBtn.classList.remove("recording");
+                        micBtn.innerHTML = "🔴";
+                        myanmarText.value = "⏳ အသံကို AI ထံ ပို့ဆောင်နေပါသည်...";
+                        englishText.value = "⏳ ဘာသာပြန်နေပါသည်...";
+                        
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = async () => {
+                            const base64Audio = reader.result.split(',')[1];
+                            await processAudioWithGemini(base64Audio);
+                        };
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                } catch (err) {
+                    alert("❌ မိုက်ခရိုဖုန်း အသုံးပြုခွင့် မရပါ။ Browser Settings တွင် Microphone ကို Allow ပေးပါ။");
+                }
+            } else {
+                mediaRecorder.stop();
+            }
+        });
+
+        async function processAudioWithGemini(base64Audio) {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) { alert('Gemini API Key ထည့်ပါ။'); return; }
+
+            const targetLang = languageSelect.value;
+            outputLabel.innerText = targetLang + ' Translation:';
+
+            // ဘယ်ဘာသာစကားနဲ့ ပြောပြော အလိုအလျောက် သိရှိနိုင်ရန် AI ကို ညွှန်ကြားခြင်း (Auto-detect Language)
+            let promptInstruction = `Listen to the provided audio carefully. Auto-detect the spoken language.
+            1. Transcribe EXACTLY what they said in their original language.
+            2. Translate the entire meaning into ${targetLang}.
+            Output EXACTLY in this format with no markdown:
+            TRANSCRIBED: [exact words spoken in original language]
+            DISPLAY: [Direct Translation in ${targetLang}]
+            SPEAK: [Translation in ${targetLang}]`;
+
+            if (targetLang === "Myanmar") {
+                promptInstruction = `Listen to the provided audio carefully. Auto-detect the spoken language.
+                1. Transcribe EXACTLY what they said in their original language.
+                2. Translate the meaning into Myanmar.
+                Output EXACTLY in this format with no markdown:
+                TRANSCRIBED: [exact words spoken in original language]
+                DISPLAY: [Myanmar translation. Keep English words in English alphabet.]
+                SPEAK: [Myanmar translation. Transliterate English words to Myanmar phonetic script.]`;
+            }
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: promptInstruction },
+                                { inlineData: { mimeType: "audio/webm", data: base64Audio } }
+                            ]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    myanmarText.value = "❌ Error: " + data.error.message;
+                    englishText.value = "";
+                } else {
+                    const resultText = data.candidates[0].content.parts[0].text;
+                    let transcribedText = "";
+                    let displayText = resultText;
+                    let speakText = resultText;
+
+                    if (resultText.includes("TRANSCRIBED:") && resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
+                        const tParts = resultText.split("DISPLAY:");
+                        transcribedText = tParts[0].replace("TRANSCRIBED:", "").trim();
+                        const sParts = tParts[1].split("SPEAK:");
+                        displayText = sParts[0].trim();
+                        speakText = sParts[1].trim();
+                    }
+
+                    myanmarText.value = transcribedText || "အသံဖမ်းယူမှု မအောင်မြင်ပါ";
+                    englishText.value = displayText;
+                    englishText.dataset.speak = speakText;
+                    
+                    autoResize(myanmarText);
+                    autoResize(englishText);
+                    saveToHistory(transcribedText, displayText);
+                    
+                    if (data.usageMetadata) {
+                        tokenUsage.innerText = `🪙 ကုန်ကျ Tokens: ${data.usageMetadata.totalTokenCount} (ဈေးနှုန်း: $1 = Token ၃ သန်းခန့်)`;
+                    }
+                    
+                    cachedAudio = null; 
+                    lastSpokenText = "";
+                }
+            } catch (error) {
+                myanmarText.value = "❌ ချိတ်ဆက်မှု အမှားအယွင်း ဖြစ်ပေါ်နေပါသည်။";
+                englishText.value = "";
+            }
+        }
+
+        function saveToHistory(myText, enText) {
+            if (!myText || myText.trim() === '' || enText.includes('⏳')) return;
+            historyBox.style.display = 'block'; 
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="my-text">${myText}</span><span class="en-text">${enText}</span>`;
+            historyList.insertBefore(li, historyList.firstChild);
+        }
+
+        // --- ဓာတ်ပုံဖတ်သည့် စနစ် (Camera & Gallery) ---
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Image = e.target.result.split(',')[1];
+                const mimeType = file.type;
+                
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                
+                await processImageWithGemini(base64Image, mimeType);
+                event.target.value = ""; // Input ပြန်ရှင်းမည်
+            };
+            reader.readAsDataURL(file);
+        }
+
+        cameraInput.addEventListener('change', handleImageUpload);
+        galleryInput.addEventListener('change', handleImageUpload);
+
+        async function processImageWithGemini(base64Image, mimeType) {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) { alert('Gemini API Key ထည့်ပါ။'); return; }
+
+            const targetLang = languageSelect.value;
+            outputLabel.innerText = targetLang + ' Translation:';
+            englishText.value = "⏳ ပုံကို ဖတ်ပြီး စဉ်းစားနေပါသည်...";
+            englishText.dataset.speak = "";
+            autoResize(englishText);
+
+            let promptInstruction = `Analyze the image. If there is text, translate it to ${targetLang}. If there is no text, describe the image in ${targetLang}.
+            Output EXACTLY in this format with no markdown:
+            DISPLAY: [Direct Translation or Description in ${targetLang}]
+            SPEAK: [Translation or Description in ${targetLang}]`;
+
+            if (targetLang === "Myanmar") {
+                promptInstruction = `Analyze the image. If there is text, translate it to Myanmar. If there is no text, describe the image in Myanmar.
+                Output EXACTLY in this format with no markdown:
+                DISPLAY: [Myanmar translation or description. Keep English words in English alphabet.]
+                SPEAK: [Myanmar translation or description. Transliterate English words to Myanmar phonetic script.]`;
+            }
+
+            const userQuestion = myanmarText.value.trim();
+            if (userQuestion) {
+                promptInstruction = `User question about the image: "${userQuestion}". Answer the question in ${targetLang}.
+                Output EXACTLY in this format with no markdown:
+                DISPLAY: [Answer in ${targetLang}]
+                SPEAK: [Answer in ${targetLang}]`;
+                if (targetLang === "Myanmar") {
+                     promptInstruction = `User question about the image: "${userQuestion}". Answer the question in Myanmar.
+                     Output EXACTLY in this format with no markdown:
+                     DISPLAY: [Answer in Myanmar]
+                     SPEAK: [Answer in Myanmar phonetic script]`;
+                }
+            }
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: promptInstruction },
+                                { inlineData: { mimeType: mimeType, data: base64Image } }
+                            ]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    englishText.value = "❌ Error: " + data.error.message;
+                } else {
+                    const resultText = data.candidates[0].content.parts[0].text;
+                    let displayText = resultText;
+                    let speakText = resultText;
+
+                    if (resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
+                        const parts = resultText.split("SPEAK:");
+                        displayText = parts[0].replace("DISPLAY:", "").trim();
+                        speakText = parts[1].trim();
+                    } else {
+                        displayText = resultText.replace("DISPLAY:", "").replace("SPEAK:", "").trim();
+                        speakText = displayText;
+                    }
+
+                    englishText.value = displayText;
+                    englishText.dataset.speak = speakText;
+                    
+                    autoResize(englishText);
+                    saveToHistory("📷 ဓာတ်ပုံမှတဆင့် မေးမြန်းမှု", displayText);
+                    
+                    if (data.usageMetadata && tokenUsage) {
+                        tokenUsage.innerText = `🪙 ကုန်ကျ Tokens: ${data.usageMetadata.totalTokenCount} (ဈေးနှုန်း: $1 = Token ၃ သန်းခန့်)`;
+                    }
+                    
+                    cachedAudio = null; 
+                    lastSpokenText = "";
+                }
+            } catch (error) {
+                englishText.value = "❌ ချိတ်ဆက်မှု အမှားအယွင်း ဖြစ်ပေါ်နေပါသည်။";
+            }
+        }
+    </script>
+</body>
+</html>
