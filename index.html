@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice Translator</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon.png">
     <style>
         /* Light Mode CSS */
         body.light-mode { background-color: #f0f2f5; color: #333; }
@@ -32,29 +31,29 @@
         
         .box { background: #1e1e1e; padding: 12px 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: none; }
         
-        .flex-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .flex-group label { white-space: nowrap; font-size: 14px; font-weight: bold; width: 85px; }
-        .flex-group input, .flex-group select { flex: 1; padding: 8px 10px; border: none; border-radius: 5px; font-size: 14px; box-sizing: border-box; background-color: #2d2d2d; color: #e0e0e0; outline: none; }
+        .flex-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: nowrap; }
+        .flex-group label { white-space: nowrap; font-size: 13px; font-weight: bold; min-width: max-content; }
+        .flex-group input, .flex-group select { flex: 1; min-width: 0; padding: 8px 10px; border: none; border-radius: 5px; font-size: 14px; box-sizing: border-box; background-color: #2d2d2d; color: #e0e0e0; outline: none; }
         .flex-group input::placeholder { color: #888; }
         
         .save-btn { width: 100%; padding: 10px; font-size: 14px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; transition: 0.2s; margin-top: 5px; font-weight: bold; }
         .save-btn:hover { background-color: #218838; }
 
-        .add-fav-btn { background-color: #ffc107; color: #333; border: none; border-radius: 5px; padding: 8px 10px; font-size: 13px; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        .add-fav-btn { background-color: #ffc107; color: #333; border: none; border-radius: 5px; padding: 6px 10px; font-size: 12px; cursor: pointer; font-weight: bold; white-space: nowrap; flex-shrink: 0; }
 
         /* ကိုယ်တိုင်မှတ်ထားသော Favorites ဒီဇိုင်း */
-        .fav-langs { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .fav-langs { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
         .fav-langs span { font-size: 13px; color: #aaa; font-weight: bold; }
         .fav-btn { padding: 5px 10px; font-size: 13px; background-color: #333; border: none; border-radius: 15px; cursor: pointer; color: #e0e0e0; display: flex; align-items: center; gap: 5px; }
         .fav-btn:hover { background-color: #444; }
         .fav-del { color: #dc3545; font-weight: bold; font-size: 12px; cursor: pointer; padding: 0 3px; }
 
-        .btn-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
-        .action-row { display: flex; justify-content: center; gap: 15px; }
-        button.action-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .action-row { display: flex; justify-content: space-between; gap: 8px; width: 100%; }
+        button.action-btn { flex: 1; height: 55px; padding: 0 5px; border: none; border-radius: 14px; font-size: 13px; cursor: pointer; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1.2; text-align: center; }
         
-        /* လေးထောင့်ခလုတ်များ ဒီဇိုင်း (Mic, Camera, Gallery) */
-        .square-btn { width: 85px; height: 85px; border-radius: 20px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 35px; color: white; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        /* လေးထောင့်ခလုတ်များ ဒီဇိုင်း */
+        .square-btn { flex: 0 0 55px; height: 55px; padding: 0; border-radius: 14px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .square-btn:hover { transform: scale(1.05); }
         
         #micBtn { background-color: #dc3545; }
@@ -65,16 +64,26 @@
         #translateBtn { background-color: #ff9800; }
         #imagePreview { max-width: 100%; max-height: 250px; border-radius: 8px; margin-bottom: 10px; display: none; object-fit: cover; }
         
-        textarea { width: 100%; min-height: 60px; padding: 10px; border: none; border-radius: 8px; font-size: 15px; margin-top: 8px; box-sizing: border-box; resize: none; line-height: 1.5; overflow: hidden; background-color: #2d2d2d; color: #e0e0e0; outline: none; }
+        /* Text Box များကို ပိုကြီး၊ စာလုံးပိုကြီးအောင် လုပ်ထားပါသည် */
+        textarea { width: 100%; min-height: 120px; padding: 15px; border: 1px solid #444; border-radius: 8px; font-size: 17px; margin-top: 8px; box-sizing: border-box; resize: none; line-height: 1.6; overflow: hidden; background-color: #222; color: #e0e0e0; outline: none; }
+        textarea:focus { border-color: #17a2b8; box-shadow: 0 0 5px rgba(23,162,184,0.4); }
         textarea::placeholder { color: #888; }
         
         .header-flex { display: flex; justify-content: space-between; align-items: center; }
         .tts-btn { background-color: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: bold; }
         .tts-btn:hover { background-color: #138496; }
+        .copy-btn { background-color: #6c757d; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: bold; }
+        .copy-btn:hover { background-color: #5a6268; }
+        .action-buttons-group { display: flex; gap: 8px; }
         
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
         
-        #historyList { list-style-type: none; padding: 0; margin: 10px 0 0 0; }
+        #historyList { list-style-type: none; padding: 0; margin: 10px 0 0 0; max-height: 350px; overflow-y: auto; padding-right: 8px; }
+        /* Scrollbar ဒီဇိုင်း အသေးစား */
+        #historyList::-webkit-scrollbar { width: 6px; }
+        #historyList::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+        body.light-mode #historyList::-webkit-scrollbar-thumb { background: #ccc; }
+        
         #historyList li { padding: 10px 0; border-bottom: 1px solid #333; font-size: 13px; line-height: 1.6; }
         #historyList li:last-child { border-bottom: none; }
         .my-text { font-weight: bold; color: #e0e0e0; display: block; }
@@ -89,18 +98,12 @@
         <p class="subtitle">Creation By Thihasoe</p>
     </div>
 
-    <details class="box" style="cursor: pointer; user-select: none;">
-        <summary style="font-weight: bold; color: #ccc; padding-bottom: 2px;">⚙️ API Keys (နှိပ်၍ ဖွင့်/ပိတ်ပါ)</summary>
-        <div style="margin-top: 12px; cursor: default;">
-            <div class="flex-group">
-                <label>🔑 Gemini:</label>
-                <input type="password" id="apiKeyInput" placeholder="Gemini API Key ထည့်ပါ...">
-            </div>
-            <div class="flex-group" style="margin-bottom: 0;">
-                <label>🔑 TTS:</label>
-                <input type="password" id="ttsApiKeyInput" placeholder="Google TTS API Key ထည့်ပါ...">
-            </div>
-            <button onclick="saveApiKeys()" class="save-btn">💾 Keys များကို မှတ်ထားမည်</button>
+    <details class="box" style="cursor: pointer; user-select: none; padding: 8px 12px;">
+        <summary style="font-size: 12px; font-weight: bold; color: #aaa;">⚙️ API Keys (နှိပ်၍ ဖွင့်/ပိတ်ပါ)</summary>
+        <div style="margin-top: 10px; cursor: default; display: flex; gap: 6px; flex-wrap: wrap;">
+            <input type="password" id="apiKeyInput" placeholder="Gemini Key" style="flex: 1; min-width: 110px; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #444; background: #2d2d2d; color: #e0e0e0; outline: none;">
+            <input type="password" id="ttsApiKeyInput" placeholder="TTS Key" style="flex: 1; min-width: 110px; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #444; background: #2d2d2d; color: #e0e0e0; outline: none;">
+            <button onclick="saveApiKeys()" style="padding: 8px 12px; font-size: 13px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap;">💾 Save</button>
         </div>
     </details>
 
@@ -140,8 +143,8 @@
             <button id="micBtn" class="square-btn" title="အသံဖမ်းမည်">🔴</button>
             <button id="cameraBtn" class="square-btn" title="ဓာတ်ပုံရိုက်မည်" onclick="document.getElementById('cameraInput').click()">📷</button>
             <button id="galleryBtn" class="square-btn" title="ပုံရွေးမည်" onclick="document.getElementById('galleryInput').click()">🖼️</button>
+            <button id="translateBtn" class="action-btn">🔄 ဘာသာပြန်ရန်</button>
         </div>
-        <button id="translateBtn" class="action-btn">🔄 စာရိုက်ပြီး ဘာသာပြန်ရန်</button>
         
         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
         <input type="file" id="galleryInput" accept="image/*" style="display: none;">
@@ -150,15 +153,18 @@
     <div class="box">
         <label><b>မူရင်းစာသား / ဓာတ်ပုံ</b></label>
         <img id="imagePreview" src="" alt="Selected Image">
-        <textarea id="myanmarText" placeholder="ပြောလိုက်သော (သို့) ရိုက်ထည့်မည့် စာများကို ဤနေရာတွင် ထည့်ပါ... (ပုံနှင့်ပတ်သက်၍ မေးလိုပါက စာအရင်ရိုက်ပါ)" oninput="autoResize(this)"></textarea>
+        <textarea id="myanmarText" onfocus="setTimeout(() => this.select(), 10)" oninput="autoResize(this)"></textarea>
     </div>
 
     <div class="box">
         <div class="header-flex">
             <label><b id="outputLabel">Translation Result:</b></label>
-            <button id="ttsBtn" class="tts-btn">🔊 နားထောင်မည်</button>
+            <div class="action-buttons-group">
+                <button id="copyBtn" class="copy-btn" title="စာသားကူးယူမည်">📋 Copy</button>
+                <button id="ttsBtn" class="tts-btn">🔊 နားထောင်မည်</button>
+            </div>
         </div>
-        <textarea id="englishText" data-speak="" placeholder="ဘာသာပြန်ထားသော စာများ ဤနေရာတွင် ပေါ်လာပါမည်..." readonly></textarea>
+        <textarea id="englishText" data-speak="" readonly></textarea>
         <div id="tokenUsage" style="font-size: 12px; color: #198754; text-align: right; margin-top: 8px; font-weight: bold;"></div>
     </div>
 
@@ -187,6 +193,7 @@
         const micBtn = document.getElementById('micBtn');
         const translateBtn = document.getElementById('translateBtn');
         const ttsBtn = document.getElementById('ttsBtn');
+        const copyBtn = document.getElementById('copyBtn');
         const myanmarText = document.getElementById('myanmarText');
         const englishText = document.getElementById('englishText');
         const historyBox = document.getElementById('historyBox');
@@ -226,6 +233,7 @@
             }
             
             renderFavorites(); // Favorites ခလုတ်များ ဖော်ပြခြင်း
+            renderHistory(); // ဖုန်း Storage ထဲမှ History ကို ပြန်ခေါ်ခြင်း
             window.speechSynthesis.getVoices();
         };
 
@@ -301,17 +309,16 @@
             englishText.dataset.speak = ""; 
             autoResize(englishText);
 
-            let promptInstruction = `You are a professional translator. Provide the ${targetLang} translation for: "${text}"
-            Output exactly in this format with no markdown:
-            DISPLAY: [Direct Translation]
-            SPEAK: [Translation]`;
-
-            if (targetLang === "Myanmar") {
-                promptInstruction = `Translate to Myanmar: "${text}"
-                Output exactly in this format with no markdown:
-                DISPLAY: [Myanmar translation. Keep English words in English alphabet if they are brands or tech terms.]
-                SPEAK: [Myanmar translation. But transliterate any English words entirely into Myanmar phonetic script so a local Text-to-Speech can read it fluently.]`;
-            }
+            let otherLang = targetLang === "Myanmar" ? "English" : targetLang;
+            let promptInstruction = `You are a professional two-way translator for Myanmar and ${otherLang}.
+            1. Auto-detect the language of this text: "${text}"
+            2. If the text is mainly in Myanmar, translate it to ${otherLang}.
+            3. If the text is mainly in ${otherLang} (or any other language), translate it to Myanmar.
+            
+            Output EXACTLY in this format with no markdown:
+            TARGET_LANG: [The language you translated TO: either "${otherLang}" or "Myanmar"]
+            DISPLAY: [The Direct Translation. If translating to Myanmar, keep brands in English alphabet.]
+            SPEAK: [The Translation. If translating to Myanmar, transliterate English words to Myanmar phonetic script for local TTS.]`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
@@ -329,17 +336,25 @@
                     let displayText = resultText;
                     let speakText = resultText;
 
-                    if (resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
+                    let detectedTargetLang = targetLang;
+                    if (resultText.includes("TARGET_LANG:") && resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
+                        const tLangParts = resultText.split("DISPLAY:");
+                        detectedTargetLang = tLangParts[0].replace("TARGET_LANG:", "").trim();
+                        const sParts = tLangParts[1].split("SPEAK:");
+                        displayText = sParts[0].trim();
+                        speakText = sParts[1].trim();
+                    } else if (resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
                         const parts = resultText.split("SPEAK:");
                         displayText = parts[0].replace("DISPLAY:", "").trim();
                         speakText = parts[1].trim();
                     }
 
+                    outputLabel.innerText = detectedTargetLang + ' Translation:';
                     englishText.value = displayText;
                     englishText.dataset.speak = speakText;
                     
                     autoResize(englishText);
-                    saveToHistory(text, displayText);
+                    saveToHistory(text, displayText, speakText, detectedTargetLang);
                     
                     if (data.usageMetadata) {
                         tokenUsage.innerText = `🪙 ကုန်ကျ Tokens: ${data.usageMetadata.totalTokenCount} (ဈေးနှုန်း: $1 = Token ၃ သန်းခန့်)`;
@@ -355,6 +370,20 @@
 
         translateBtn.addEventListener('click', () => {
             if (myanmarText.value.trim() !== '') translateWithGemini(myanmarText.value.trim());
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = englishText.value.trim();
+            // စာသားရှိမှသာလျှင်၊ ပြီးတော့ Loading သို့မဟုတ် Error ပြနေချိန်မဟုတ်မှသာ Copy ကူးမည်
+            if (textToCopy !== '' && !textToCopy.includes('⏳') && !textToCopy.includes('❌')) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = "✅ Copied";
+                    setTimeout(() => { copyBtn.innerHTML = originalText; }, 2000);
+                }).catch(err => {
+                    alert("❌ Copy ကူးယူရာတွင် အမှားအယွင်းဖြစ်ပေါ်ခဲ့ပါသည်။");
+                });
+            }
         });
 
         ttsBtn.addEventListener('click', async () => {
@@ -415,6 +444,13 @@
                 } else {
                     cachedAudio = new Audio("data:audio/mp3;base64," + data.audioContent);
                     lastSpokenText = textToSpeak;
+                    
+                    // ပင်မခလုတ်ကနေ နားထောင်မှသာ History ထဲကို အသံဖိုင် တွဲမှတ်ပေးမည်
+                    let chatHistory = JSON.parse(localStorage.getItem('my_chat_history')) || [];
+                    if (chatHistory.length > 0 && (chatHistory[0].speakText === textToSpeak || chatHistory[0].enText === textToSpeak)) {
+                        chatHistory[0].audioBase64 = data.audioContent;
+                        localStorage.setItem('my_chat_history', JSON.stringify(chatHistory));
+                    }
                     
                     cachedAudio.play();
                     cachedAudio.onended = () => { ttsBtn.innerText = "🔊 နားထောင်မည်"; };
@@ -482,24 +518,18 @@
             const targetLang = languageSelect.value;
             outputLabel.innerText = targetLang + ' Translation:';
 
-            // ဘယ်ဘာသာစကားနဲ့ ပြောပြော အလိုအလျောက် သိရှိနိုင်ရန် AI ကို ညွှန်ကြားခြင်း (Auto-detect Language)
-            let promptInstruction = `Listen to the provided audio carefully. Auto-detect the spoken language.
-            1. Transcribe EXACTLY what they said in their original language.
-            2. Translate the entire meaning into ${targetLang}.
+            // အသွားအပြန် (Two-way) ဘာသာပြန်စနစ်အတွက် ညွှန်ကြားချက်
+            let otherLang = targetLang === "Myanmar" ? "English" : targetLang;
+            let promptInstruction = `Listen carefully and auto-detect the spoken language.
+            1. Transcribe EXACTLY what was said in the original language.
+            2. If the spoken language is mainly Myanmar, translate it to ${otherLang}.
+            3. If the spoken language is mainly ${otherLang} (or any other language), translate it to Myanmar.
+
             Output EXACTLY in this format with no markdown:
             TRANSCRIBED: [exact words spoken in original language]
-            DISPLAY: [Direct Translation in ${targetLang}]
-            SPEAK: [Translation in ${targetLang}]`;
-
-            if (targetLang === "Myanmar") {
-                promptInstruction = `Listen to the provided audio carefully. Auto-detect the spoken language.
-                1. Transcribe EXACTLY what they said in their original language.
-                2. Translate the meaning into Myanmar.
-                Output EXACTLY in this format with no markdown:
-                TRANSCRIBED: [exact words spoken in original language]
-                DISPLAY: [Myanmar translation. Keep English words in English alphabet.]
-                SPEAK: [Myanmar translation. Transliterate English words to Myanmar phonetic script.]`;
-            }
+            TARGET_LANG: [The language you translated TO: either "${otherLang}" or "Myanmar"]
+            DISPLAY: [The Direct Translation. If translating to Myanmar, keep brands in English alphabet.]
+            SPEAK: [The Translation. If translating to Myanmar, transliterate English words to Myanmar phonetic script for local TTS.]`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
@@ -525,7 +555,16 @@
                     let displayText = resultText;
                     let speakText = resultText;
 
-                    if (resultText.includes("TRANSCRIBED:") && resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
+                    let detectedTargetLang = targetLang;
+                    if (resultText.includes("TRANSCRIBED:") && resultText.includes("TARGET_LANG:") && resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
+                        const textParts1 = resultText.split("TARGET_LANG:");
+                        transcribedText = textParts1[0].replace("TRANSCRIBED:", "").trim();
+                        const textParts2 = textParts1[1].split("DISPLAY:");
+                        detectedTargetLang = textParts2[0].trim();
+                        const textParts3 = textParts2[1].split("SPEAK:");
+                        displayText = textParts3[0].trim();
+                        speakText = textParts3[1].trim();
+                    } else if (resultText.includes("TRANSCRIBED:") && resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
                         const tParts = resultText.split("DISPLAY:");
                         transcribedText = tParts[0].replace("TRANSCRIBED:", "").trim();
                         const sParts = tParts[1].split("SPEAK:");
@@ -533,13 +572,14 @@
                         speakText = sParts[1].trim();
                     }
 
+                    outputLabel.innerText = detectedTargetLang + ' Translation:';
                     myanmarText.value = transcribedText || "အသံဖမ်းယူမှု မအောင်မြင်ပါ";
                     englishText.value = displayText;
                     englishText.dataset.speak = speakText;
                     
                     autoResize(myanmarText);
                     autoResize(englishText);
-                    saveToHistory(transcribedText, displayText);
+                    saveToHistory(transcribedText, displayText, speakText, detectedTargetLang);
                     
                     if (data.usageMetadata) {
                         tokenUsage.innerText = `🪙 ကုန်ကျ Tokens: ${data.usageMetadata.totalTokenCount} (ဈေးနှုန်း: $1 = Token ၃ သန်းခန့်)`;
@@ -554,12 +594,120 @@
             }
         }
 
-        function saveToHistory(myText, enText) {
-            if (!myText || myText.trim() === '' || enText.includes('⏳')) return;
-            historyBox.style.display = 'block'; 
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="my-text">${myText}</span><span class="en-text">${enText}</span>`;
-            historyList.insertBefore(li, historyList.firstChild);
+        function renderHistory() {
+            let chatHistory = JSON.parse(localStorage.getItem('my_chat_history')) || [];
+            historyList.innerHTML = ''; 
+            if (chatHistory.length > 0) {
+                historyBox.style.display = 'block';
+                chatHistory.forEach((item, index) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <span class="my-text">${item.myText}</span>
+                                <span style="font-size: 11px; color: #ff9800; font-weight: bold; margin-top: 5px; display: block;">🌐 ${item.lang || 'English'}</span>
+                                <span class="en-text" style="margin-top: 2px;">${item.enText}</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; align-items: center; margin-top: 5px;">
+                                <button class="tts-btn" style="padding: 6px 12px; font-size: 14px;" title="နားထောင်မည်" onclick="playHistoryAudio(${index}, this)">🔊</button>
+                                <button style="background: none; border: none; color: #dc3545; font-size: 13px; font-weight: bold; cursor: pointer; padding: 2px; text-decoration: underline;" onclick="deleteHistoryItem(${index})" title="ဖျက်မည်">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                    historyList.appendChild(li);
+                });
+            } else {
+                historyBox.style.display = 'none';
+            }
+        }
+
+        // --- History မှ တစ်ခုချင်းစီကို ဖျက်ရန် စနစ် ---
+        function deleteHistoryItem(index) {
+            if (confirm("ဤမှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?")) {
+                let chatHistory = JSON.parse(localStorage.getItem('my_chat_history')) || [];
+                chatHistory.splice(index, 1); // ရွေးချယ်ထားသော အရာကို ဖျက်မည်
+                localStorage.setItem('my_chat_history', JSON.stringify(chatHistory));
+                renderHistory(); // စာရင်းကို အသစ်ပြန်ပြမည်
+            }
+        }
+
+        function saveToHistory(myText, enText, speakText, targetLang) {
+            if (!myText || myText.trim() === '' || enText.includes('⏳') || enText.includes('❌')) return;
+            
+            let chatHistory = JSON.parse(localStorage.getItem('my_chat_history')) || [];
+            let finalSpeakText = speakText || enText; 
+            let finalLang = targetLang || languageSelect.value;
+            
+            chatHistory.unshift({ myText: myText, enText: enText, speakText: finalSpeakText, lang: finalLang });
+            
+            if (chatHistory.length > 20) chatHistory = chatHistory.slice(0, 20); // Storage ပြည့်မှာစိုးသဖြင့် ၂၀ ခုသာထားမည်
+            
+            try {
+                localStorage.setItem('my_chat_history', JSON.stringify(chatHistory));
+            } catch (e) {
+                // Storage ပြည့်သွားပါက အဟောင်းဆုံးတစ်ဝက်ကို ဖျက်ပြီး ထပ်သိမ်းမည်
+                chatHistory = chatHistory.slice(0, 10);
+                localStorage.setItem('my_chat_history', JSON.stringify(chatHistory));
+            }
+            renderHistory();
+        }
+
+        async function playHistoryAudio(index, btnElement) {
+            let chatHistory = JSON.parse(localStorage.getItem('my_chat_history')) || [];
+            let item = chatHistory[index];
+            if (!item) return;
+
+            // ၁။ Storage ထဲမှာ အသံဖိုင် မှတ်ထားပြီးသားဆို တိုက်ရိုက်ဖွင့်မည် (API ဖိုး လုံးဝ မကုန်ပါ)
+            if (item.audioBase64) {
+                let audio = new Audio("data:audio/mp3;base64," + item.audioBase64);
+                audio.play();
+                return;
+            }
+
+            // Error မတက်စေရန် အဟောင်းများအတွက် enText ကို အစားထိုးယူမည်
+            let textToSpeak = item.speakText || item.enText;
+            if (!textToSpeak) {
+                alert("ဖတ်စရာ စာသား မရှိပါ။");
+                return;
+            }
+
+            // ၂။ မရှိသေးရင်သာ Google TTS မှ တစ်ကြိမ် လှမ်းတောင်းမည်
+            const ttsApiKey = localStorage.getItem('tts_api_key');
+            if (!ttsApiKey) { alert('Google TTS API Key လိုအပ်ပါသည်။'); return; }
+
+            const langCodeMap = { "Myanmar": "my-MM", "English": "en-US", "Thai": "th-TH", "Chinese": "zh-CN", "Japanese": "ja-JP", "Korean": "ko-KR", "Hindi": "hi-IN", "Spanish": "es-ES", "French": "fr-FR", "German": "de-DE", "Russian": "ru-RU", "Arabic": "ar-SA", "Malay": "ms-MY", "Indonesian": "id-ID", "Vietnamese": "vi-VN", "Italian": "it-IT", "Portuguese": "pt-PT", "Dutch": "nl-NL", "Turkish": "tr-TR" };
+            const langCode = langCodeMap[item.lang] || "en-US";
+            const googleLangMap = { "Chinese": "cmn-CN", "Arabic": "ar-XA" };
+            const gLang = googleLangMap[item.lang] || langCode;
+
+            const originalText = btnElement.innerText;
+            btnElement.innerText = "⏳";
+
+            try {
+                const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${ttsApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input: { text: textToSpeak }, voice: { languageCode: gLang }, audioConfig: { audioEncoding: "MP3" } })
+                });
+
+                const data = await response.json();
+                btnElement.innerText = originalText;
+
+                if (data.error) {
+                    alert("❌ TTS Error: " + data.error.message);
+                } else {
+                    // ၃။ ရလာတဲ့ အသံကို နောက်တစ်ခါ ပိုက်ဆံမကုန်အောင် History ထဲမှာ တခါတည်း မှတ်ထားလိုက်မည်
+                    item.audioBase64 = data.audioContent;
+                    chatHistory[index] = item;
+                    localStorage.setItem('my_chat_history', JSON.stringify(chatHistory));
+
+                    let audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+                    audio.play();
+                }
+            } catch (error) {
+                btnElement.innerText = originalText;
+                alert("❌ အသံဖိုင်ရယူရာတွင် အမှားအယွင်း ဖြစ်ပေါ်နေပါသည်။");
+            }
         }
 
         // --- ဓာတ်ပုံဖတ်သည့် စနစ် (Camera & Gallery) ---
@@ -656,7 +804,7 @@
                     englishText.dataset.speak = speakText;
                     
                     autoResize(englishText);
-                    saveToHistory("📷 ဓာတ်ပုံမှတဆင့် မေးမြန်းမှု", displayText);
+                    saveToHistory("📷 ဓာတ်ပုံမှတဆင့် မေးမြန်းမှု", displayText, speakText, targetLang);
                     
                     if (data.usageMetadata && tokenUsage) {
                         tokenUsage.innerText = `🪙 ကုန်ကျ Tokens: ${data.usageMetadata.totalTokenCount} (ဈေးနှုန်း: $1 = Token ၃ သန်းခန့်)`;
