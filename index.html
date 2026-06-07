@@ -88,6 +88,10 @@
         #historyList li:last-child { border-bottom: none; }
         .my-text { font-weight: bold; color: #e0e0e0; display: block; }
         .en-text { color: #aaa; margin-top: 4px; display: block; }
+
+        /* ခလုတ်များကို နှိပ်လိုက်လျှင် တကယ်နှိပ်လိုက်သလို ဝင်သွားစေရန် (Click Effect) */
+        button { transition: transform 0.1s ease, opacity 0.1s ease, background-color 0.2s ease !important; }
+        button:active { transform: scale(0.92) !important; opacity: 0.8 !important; }
     </style>
 </head>
 <body>
@@ -101,8 +105,8 @@
     <details class="box" style="cursor: pointer; user-select: none; padding: 8px 12px;">
         <summary style="font-size: 12px; font-weight: bold; color: #aaa;">⚙️ API Keys (နှိပ်၍ ဖွင့်/ပိတ်ပါ)</summary>
         <div style="margin-top: 10px; cursor: default; display: flex; gap: 6px; flex-wrap: wrap;">
-            <input type="password" id="apiKeyInput" placeholder="Gemini Key" style="flex: 1; min-width: 110px; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #444; background: #2d2d2d; color: #e0e0e0; outline: none;">
-            <input type="password" id="ttsApiKeyInput" placeholder="TTS Key" style="flex: 1; min-width: 110px; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #444; background: #2d2d2d; color: #e0e0e0; outline: none;">
+            <input type="password" id="apiKeyInput" placeholder="Gemini Key" oncopy="return false" oncut="return false" style="flex: 1; min-width: 110px; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #444; background: #2d2d2d; color: #e0e0e0; outline: none;">
+            <input type="password" id="ttsApiKeyInput" placeholder="TTS Key" oncopy="return false" oncut="return false" style="flex: 1; min-width: 110px; padding: 8px; font-size: 13px; border-radius: 6px; border: 1px solid #444; background: #2d2d2d; color: #e0e0e0; outline: none;">
             <button onclick="saveApiKeys()" style="padding: 8px 12px; font-size: 13px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap;">💾 Save</button>
         </div>
     </details>
@@ -235,6 +239,7 @@
             renderFavorites(); // Favorites ခလုတ်များ ဖော်ပြခြင်း
             renderHistory(); // ဖုန်း Storage ထဲမှ History ကို ပြန်ခေါ်ခြင်း
             window.speechSynthesis.getVoices();
+            displayCurrentUsage(); // အကြိမ်ရေ စတင်ဖော်ပြရန်
         };
 
         window.speechSynthesis.onvoiceschanged = function() {
@@ -244,10 +249,12 @@
         function saveApiKeys() {
             const geminiKey = apiKeyInput.value.trim();
             const ttsKey = ttsApiKeyInput.value.trim();
-            let message = "";
-            if (geminiKey !== '') { localStorage.setItem('gemini_api_key', geminiKey); message += "✅ Gemini API Key သိမ်းဆည်းပြီးပါပြီ။\n"; }
-            if (ttsKey !== '') { localStorage.setItem('tts_api_key', ttsKey); message += "✅ TTS API Key သိမ်းဆည်းပြီးပါပြီ။"; }
-            if (message !== "") { alert(message); } else { alert('⚠️ API Key အနည်းဆုံးတစ်ခု ထည့်သွင်းရန် လိုအပ်ပါသည်။'); }
+            
+            // အကွက်ထဲမှာ စာရှိရှိ၊ မရှိရှိ (ဖျက်လိုက်လျှင်လည်း ဖျက်လိုက်သည့်အတိုင်း အလွတ်) Storage ထဲသို့ Update လုပ်မည်
+            localStorage.setItem('gemini_api_key', geminiKey);
+            localStorage.setItem('tts_api_key', ttsKey);
+            
+            alert("✅ API Keys များကို အောင်မြင်စွာ သိမ်းဆည်း/ပြင်ဆင် ပြီးပါပြီ။");
         }
 
         // ဘာသာစကား မှတ်သားခြင်း
@@ -299,6 +306,34 @@
         }
         // --- Favorites စနစ် ပြီးဆုံးခြင်း ---
 
+        // ယနေ့ အသုံးပြုမှု အကြိမ်ရေ မှတ်သားရန် စနစ် 
+        function trackDailyUsage() {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            const dateString = dd + '-' + mm + '-' + yyyy; 
+
+            let savedDate = localStorage.getItem('usage_date');
+            let count = parseInt(localStorage.getItem('daily_request_count')) || 0;
+
+            if (savedDate !== dateString) {
+                count = 0; // နောက်တစ်နေ့ရောက်ပါက အကြိမ်ရေ သုညမှ ပြန်စမည်
+                localStorage.setItem('usage_date', dateString);
+            }
+            count++;
+            localStorage.setItem('daily_request_count', count);
+            return count;
+        }
+
+        // စာမျက်နှာစဖွင့်ချိန်တွင် အကြိမ်ရေကို ဖော်ပြရန်
+        function displayCurrentUsage() {
+            const today = new Date();
+            const dateString = String(today.getDate()).padStart(2, '0') + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + today.getFullYear();
+            let count = (localStorage.getItem('usage_date') === dateString) ? (parseInt(localStorage.getItem('daily_request_count')) || 0) : 0;
+            tokenUsage.innerText = `📊 ယနေ့ အသုံးပြုမှု: ${count} / 500 ကြိမ်`;
+        }
+
         async function translateWithGemini(text) {
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) { alert('ကျေးဇူးပြု၍ အပေါ်တွင် Gemini API Key ထည့်သွင်းပါ။'); return; }
@@ -309,24 +344,33 @@
             englishText.dataset.speak = ""; 
             autoResize(englishText);
 
-            let otherLang = targetLang === "Myanmar" ? "English" : targetLang;
-            let promptInstruction = `You are a professional two-way translator for Myanmar and ${otherLang}.
+            // မှတ်သားထားသော နောက်ဆုံးအသုံးပြုခဲ့သည့် မူရင်းဘာသာစကားကို ခေါ်ယူမည် (မရှိလျှင် Myanmar ဟု သတ်မှတ်မည်)
+            let lastSourceLang = localStorage.getItem('last_source_lang') || "Myanmar";
+            
+            let promptInstruction = `You are a professional two-way translator.
+            The current active languages are "${lastSourceLang}" and "${targetLang}".
             1. Auto-detect the language of this text: "${text}"
-            2. If the text is mainly in Myanmar, translate it to ${otherLang}.
-            3. If the text is mainly in ${otherLang}, translate it to Myanmar.
-            4. If the text is in any third language, translate it to ${otherLang}.
+            2. If the text is mainly in "${targetLang}", translate it to "${lastSourceLang}".
+            3. If the text is NOT in "${targetLang}", translate it to "${targetLang}".
             
             Output EXACTLY in this format with no markdown:
-            TARGET_LANG: [The language you translated TO: either "${otherLang}" or "Myanmar"]
+            DETECTED_LANG: [The exact language name you detected from the text]
+            TARGET_LANG: [The language you translated TO]
             DISPLAY: [The Direct Translation. If translating to Myanmar, keep brands in English alphabet.]
             SPEAK: [The Translation. If translating to Myanmar, transliterate English words to Myanmar phonetic script for local TTS.]`;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: promptInstruction }] }] })
                 });
+
+                // ၁ မိနစ်အတွင်း အကြိမ်ရေများသွားပါက တိကျစွာ သတိပေးမည်
+                if (response.status === 429) {
+                    englishText.value = "❌ ကန့်သတ်ချက် ပြည့်သွားပါပြီ။ နောက်ထပ်မေးရန် ၁ မိနစ်ခန့် စောင့်ပေးပါ။";
+                    return;
+                }
 
                 const data = await response.json();
                 
@@ -338,15 +382,27 @@
                     let speakText = resultText;
 
                     let detectedTargetLang = targetLang;
-                    if (resultText.includes("TARGET_LANG:") && resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
-                        const tLangParts = resultText.split("DISPLAY:");
-                        detectedTargetLang = tLangParts[0].replace("TARGET_LANG:", "").trim();
-                        const sParts = tLangParts[1].split("SPEAK:");
-                        displayText = sParts[0].trim();
-                        speakText = sParts[1].trim();
+                    
+                    const targetMatch = resultText.match(/TARGET_LANG:\s*(.+)/);
+                    const detectMatch = resultText.match(/DETECTED_LANG:\s*(.+)/);
+                    const displayMatch = resultText.match(/DISPLAY:\s*([\s\S]*?)SPEAK:/);
+                    const speakMatch = resultText.match(/SPEAK:\s*([\s\S]*)/);
+
+                    if (targetMatch && displayMatch && speakMatch) {
+                        detectedTargetLang = targetMatch[1].trim();
+                        displayText = displayMatch[1].trim();
+                        speakText = speakMatch[1].trim();
+                        
+                        if (detectMatch) {
+                            let dLang = detectMatch[1].trim();
+                            // ရိုက်ထည့်လိုက်သောစာသည် Target မဟုတ်လျှင်၊ ၎င်းကို Base Language အဖြစ် အလိုအလျောက် မှတ်ထားမည်
+                            if (dLang.toLowerCase() !== targetLang.toLowerCase()) {
+                                localStorage.setItem('last_source_lang', dLang);
+                            }
+                        }
                     } else if (resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
                         const parts = resultText.split("SPEAK:");
-                        displayText = parts[0].replace("DISPLAY:", "").trim();
+                        displayText = parts[0].replace(/.*DISPLAY:/, "").trim();
                         speakText = parts[1].trim();
                     }
 
@@ -357,8 +413,11 @@
                     autoResize(englishText);
                     saveToHistory(text, displayText, speakText, detectedTargetLang);
                     
+                    let currentCount = trackDailyUsage();
                     if (data.usageMetadata) {
-                        tokenUsage.innerText = `🪙 ကုန်ကျ Tokens: ${data.usageMetadata.totalTokenCount} (ဈေးနှုန်း: $1 = Token ၃ သန်းခန့်)`;
+                        tokenUsage.innerText = `🪙 Tokens: ${data.usageMetadata.totalTokenCount} | 📊 ယနေ့: ${currentCount} / 500 ကြိမ်`;
+                    } else {
+                        tokenUsage.innerText = `📊 ယနေ့ အသုံးပြုမှု: ${currentCount} / 500 ကြိမ်`;
                     }
                     
                     cachedAudio = null; 
@@ -396,7 +455,10 @@
                 return;
             }
 
-            const targetLang = languageSelect.value;
+            // ဘာသာစကားကို Output Label မှ တိကျစွာ ဆွဲယူမည်
+            let currentLangLabel = document.getElementById('outputLabel').innerText;
+            let targetLang = currentLangLabel.replace(" Translation:", "").trim();
+
             const langCodeMap = { 
                 "Myanmar": "my-MM", "English": "en-US", "Thai": "th-TH", 
                 "Chinese": "zh-CN", "Japanese": "ja-JP", "Korean": "ko-KR",
@@ -406,30 +468,22 @@
                 "Italian": "it-IT", "Portuguese": "pt-PT", "Dutch": "nl-NL", "Turkish": "tr-TR"
             };
             const langCode = langCodeMap[targetLang] || "en-US";
+            const ttsApiKey = localStorage.getItem('tts_api_key');
 
-            const voices = window.speechSynthesis.getVoices();
-            const matchingVoice = voices.find(voice => voice.lang.includes(langCode.split('-')[0]));
-
-            if (matchingVoice && targetLang !== "Myanmar") {
+            // API Key မရှိလျှင် (သို့) အင်္ဂလိပ်စာဖြစ်လျှင် ဖုန်း၏ မူလအခမဲ့ TTS ကို သုံးမည်
+            if (targetLang === "English" || !ttsApiKey) {
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
                 utterance.lang = langCode;
-                utterance.voice = matchingVoice;
+                
+                // စက်ထဲတွင် အသံရှိမရှိ စစ်ဆေးပြီး ထည့်သွင်းမည်
+                const voices = window.speechSynthesis.getVoices();
+                const matchingVoice = voices.find(voice => voice.lang.includes(langCode.split('-')[0]));
+                if (matchingVoice) utterance.voice = matchingVoice;
+                
                 window.speechSynthesis.speak(utterance);
                 return;
             }
 
-            const ttsApiKey = localStorage.getItem('tts_api_key');
-            let currentLangLabel = document.getElementById('outputLabel').innerText;
-            let isEnglish = currentLangLabel.includes("English");
-            
-            // အင်္ဂလိပ်စာဖြစ်လျှင် (သို့) API Key မရှိလျှင် ဖုန်း၏ မူလအခမဲ့ TTS ကို သုံးမည်
-            if (isEnglish || !ttsApiKey) {
-                let utterance = new SpeechSynthesisUtterance(textToSpeak);
-                utterance.lang = isEnglish ? "en-US" : "my-MM";
-                window.speechSynthesis.speak(utterance);
-                return;
-            }
-            
             const googleLangMap = { "Chinese": "cmn-CN", "Arabic": "ar-XA" };
             const gLang = googleLangMap[targetLang] || langCode;
 
@@ -529,21 +583,23 @@
             outputLabel.innerText = targetLang + ' Translation:';
 
             // အသွားအပြန် (Two-way) ဘာသာပြန်စနစ်အတွက် ညွှန်ကြားချက်
-            let otherLang = targetLang === "Myanmar" ? "English" : targetLang;
+            let lastSourceLang = localStorage.getItem('last_source_lang') || "Myanmar";
+            
             let promptInstruction = `Listen carefully and auto-detect the spoken language.
+            The current active languages are "${lastSourceLang}" and "${targetLang}".
             1. Transcribe EXACTLY what was said in the original language.
-            2. If the spoken language is mainly Myanmar, translate it to ${otherLang}.
-            3. If the spoken language is mainly ${otherLang}, translate it to Myanmar.
-            4. If the spoken language is any third language, translate it to ${otherLang}.
+            2. If the spoken language is mainly "${targetLang}", translate it to "${lastSourceLang}".
+            3. If the spoken language is NOT "${targetLang}", translate it to "${targetLang}".
 
             Output EXACTLY in this format with no markdown:
             TRANSCRIBED: [exact words spoken in original language]
-            TARGET_LANG: [The language you translated TO: either "${otherLang}" or "Myanmar"]
+            DETECTED_LANG: [The exact language name you detected from the audio]
+            TARGET_LANG: [The language you translated TO]
             DISPLAY: [The Direct Translation. If translating to Myanmar, keep brands in English alphabet.]
             SPEAK: [The Translation. If translating to Myanmar, transliterate English words to Myanmar phonetic script for local TTS.]`;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -556,6 +612,13 @@
                     })
                 });
 
+                // ၁ မိနစ်အတွင်း အကြိမ်ရေများသွားပါက တိကျစွာ သတိပေးမည်
+                if (response.status === 429) {
+                    myanmarText.value = "❌ ကန့်သတ်ချက် ပြည့်သွားပါပြီ။ နောက်ထပ်မေးရန် ၁ မိနစ်ခန့် စောင့်ပေးပါ။";
+                    englishText.value = "";
+                    return;
+                }
+
                 const data = await response.json();
                 if (data.error) {
                     myanmarText.value = "❌ Error: " + data.error.message;
@@ -567,17 +630,28 @@
                     let speakText = resultText;
 
                     let detectedTargetLang = targetLang;
-                    if (resultText.includes("TRANSCRIBED:") && resultText.includes("TARGET_LANG:") && resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
-                        const textParts1 = resultText.split("TARGET_LANG:");
-                        transcribedText = textParts1[0].replace("TRANSCRIBED:", "").trim();
-                        const textParts2 = textParts1[1].split("DISPLAY:");
-                        detectedTargetLang = textParts2[0].trim();
-                        const textParts3 = textParts2[1].split("SPEAK:");
-                        displayText = textParts3[0].trim();
-                        speakText = textParts3[1].trim();
+                    
+                    const transMatch = resultText.match(/TRANSCRIBED:\s*([\s\S]*?)(?:DETECTED_LANG:|TARGET_LANG:)/);
+                    const targetMatch = resultText.match(/TARGET_LANG:\s*(.+)/);
+                    const detectMatch = resultText.match(/DETECTED_LANG:\s*(.+)/);
+                    const displayMatch = resultText.match(/DISPLAY:\s*([\s\S]*?)SPEAK:/);
+                    const speakMatch = resultText.match(/SPEAK:\s*([\s\S]*)/);
+
+                    if (transMatch && targetMatch && displayMatch && speakMatch) {
+                        transcribedText = transMatch[1].trim();
+                        detectedTargetLang = targetMatch[1].trim();
+                        displayText = displayMatch[1].trim();
+                        speakText = speakMatch[1].trim();
+                        
+                        if (detectMatch) {
+                            let dLang = detectMatch[1].trim();
+                            if (dLang.toLowerCase() !== targetLang.toLowerCase()) {
+                                localStorage.setItem('last_source_lang', dLang);
+                            }
+                        }
                     } else if (resultText.includes("TRANSCRIBED:") && resultText.includes("DISPLAY:") && resultText.includes("SPEAK:")) {
                         const tParts = resultText.split("DISPLAY:");
-                        transcribedText = tParts[0].replace("TRANSCRIBED:", "").trim();
+                        transcribedText = tParts[0].replace(/.*TRANSCRIBED:/, "").trim();
                         const sParts = tParts[1].split("SPEAK:");
                         displayText = sParts[0].trim();
                         speakText = sParts[1].trim();
@@ -592,8 +666,11 @@
                     autoResize(englishText);
                     saveToHistory(transcribedText, displayText, speakText, detectedTargetLang);
                     
+                    let currentCount = trackDailyUsage();
                     if (data.usageMetadata) {
-                        tokenUsage.innerText = `🪙 ကုန်ကျ Tokens: ${data.usageMetadata.totalTokenCount} (ဈေးနှုန်း: $1 = Token ၃ သန်းခန့်)`;
+                        tokenUsage.innerText = `🪙 Tokens: ${data.usageMetadata.totalTokenCount} | 📊 ယနေ့: ${currentCount} / 500 ကြိမ်`;
+                    } else {
+                        tokenUsage.innerText = `📊 ယနေ့ အသုံးပြုမှု: ${currentCount} / 500 ကြိမ်`;
                     }
                     
                     cachedAudio = null; 
@@ -785,7 +862,7 @@
             }
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -797,6 +874,12 @@
                         }]
                     })
                 });
+
+                // ၁ မိနစ်အတွင်း အကြိမ်ရေများသွားပါက တိကျစွာ သတိပေးမည်
+                if (response.status === 429) {
+                    englishText.value = "❌ ကန့်သတ်ချက် ပြည့်သွားပါပြီ။ နောက်ထပ်မေးရန် ၁ မိနစ်ခန့် စောင့်ပေးပါ။";
+                    return;
+                }
 
                 const data = await response.json();
                 
@@ -822,8 +905,11 @@
                     autoResize(englishText);
                     saveToHistory("📷 ဓာတ်ပုံမှတဆင့် မေးမြန်းမှု", displayText, speakText, targetLang);
                     
+                    let currentCount = trackDailyUsage();
                     if (data.usageMetadata && tokenUsage) {
-                        tokenUsage.innerText = `🪙 ကုန်ကျ Tokens: ${data.usageMetadata.totalTokenCount} (ဈေးနှုန်း: $1 = Token ၃ သန်းခန့်)`;
+                        tokenUsage.innerText = `🪙 Tokens: ${data.usageMetadata.totalTokenCount} | 📊 ယနေ့: ${currentCount} / 500 ကြိမ်`;
+                    } else if (tokenUsage) {
+                        tokenUsage.innerText = `📊 ယနေ့ အသုံးပြုမှု: ${currentCount} / 500 ကြိမ်`;
                     }
                     
                     cachedAudio = null; 
