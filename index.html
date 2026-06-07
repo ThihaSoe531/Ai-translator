@@ -70,9 +70,9 @@
         textarea::placeholder { color: #888; }
         
         .header-flex { display: flex; justify-content: space-between; align-items: center; }
-        .tts-btn { background-color: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: bold; }
+        .tts-btn { background-color: #17a2b8; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         .tts-btn:hover { background-color: #138496; }
-        .copy-btn { background-color: #6c757d; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: bold; }
+        .copy-btn { background-color: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         .copy-btn:hover { background-color: #5a6268; }
         .action-buttons-group { display: flex; gap: 8px; }
         
@@ -164,7 +164,7 @@
         <div class="header-flex">
             <label><b id="outputLabel">Translation Result:</b></label>
             <div class="action-buttons-group">
-                <button id="copyBtn" class="copy-btn" title="စာသားကူးယူမည်">📋 Copy</button>
+                <button id="copyBtn" class="copy-btn" title="စာသားကူးယူမည်">Copy</button>
                 <button id="ttsBtn" class="tts-btn">🔊 နားထောင်မည်</button>
             </div>
         </div>
@@ -357,7 +357,7 @@
             DETECTED_LANG: [The exact language name you detected from the text]
             TARGET_LANG: [The language you translated TO]
             DISPLAY: [The Direct Translation. If translating to Myanmar, keep brands in English alphabet.]
-            SPEAK: [The Translation. If translating to Myanmar, transliterate English words to Myanmar phonetic script for local TTS.]`;
+            SPEAK: [Write the exact same translated sentence again. DO NOT write labels like "Question". For Myanmar target only: transliterate English words to phonetic script.]`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
@@ -596,7 +596,7 @@
             DETECTED_LANG: [The exact language name you detected from the audio]
             TARGET_LANG: [The language you translated TO]
             DISPLAY: [The Direct Translation. If translating to Myanmar, keep brands in English alphabet.]
-            SPEAK: [The Translation. If translating to Myanmar, transliterate English words to Myanmar phonetic script for local TTS.]`;
+            SPEAK: [Write the exact same translated sentence again. DO NOT write labels like "Question". For Myanmar target only: transliterate English words to phonetic script.]`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
