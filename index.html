@@ -419,7 +419,16 @@
             }
 
             const ttsApiKey = localStorage.getItem('tts_api_key');
-            if (!ttsApiKey) { alert('Google TTS API Key လိုအပ်ပါသည်။'); return; }
+            let currentLangLabel = document.getElementById('outputLabel').innerText;
+            let isEnglish = currentLangLabel.includes("English");
+            
+            // အင်္ဂလိပ်စာဖြစ်လျှင် (သို့) API Key မရှိလျှင် ဖုန်း၏ မူလအခမဲ့ TTS ကို သုံးမည်
+            if (isEnglish || !ttsApiKey) {
+                let utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = isEnglish ? "en-US" : "my-MM";
+                window.speechSynthesis.speak(utterance);
+                return;
+            }
             
             const googleLangMap = { "Chinese": "cmn-CN", "Arabic": "ar-XA" };
             const gLang = googleLangMap[targetLang] || langCode;
@@ -673,12 +682,17 @@
                 return;
             }
 
-            // ၂။ မရှိသေးရင်သာ Google TTS မှ တစ်ကြိမ် လှမ်းတောင်းမည်
-            const ttsApiKey = localStorage.getItem('tts_api_key');
-            if (!ttsApiKey) { alert('Google TTS API Key လိုအပ်ပါသည်။'); return; }
-
             const langCodeMap = { "Myanmar": "my-MM", "English": "en-US", "Thai": "th-TH", "Chinese": "zh-CN", "Japanese": "ja-JP", "Korean": "ko-KR", "Hindi": "hi-IN", "Spanish": "es-ES", "French": "fr-FR", "German": "de-DE", "Russian": "ru-RU", "Arabic": "ar-SA", "Malay": "ms-MY", "Indonesian": "id-ID", "Vietnamese": "vi-VN", "Italian": "it-IT", "Portuguese": "pt-PT", "Dutch": "nl-NL", "Turkish": "tr-TR" };
             const langCode = langCodeMap[item.lang] || "en-US";
+
+            // ၂။ အင်္ဂလိပ်စာဖြစ်လျှင် (သို့) API Key မရှိလျှင် ဖုန်း၏ မူလအခမဲ့ TTS ကို သုံးမည်
+            const ttsApiKey = localStorage.getItem('tts_api_key');
+            if (item.lang === "English" || !ttsApiKey) {
+                let utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = langCode;
+                window.speechSynthesis.speak(utterance);
+                return;
+            }
             const googleLangMap = { "Chinese": "cmn-CN", "Arabic": "ar-XA" };
             const gLang = googleLangMap[item.lang] || langCode;
 
